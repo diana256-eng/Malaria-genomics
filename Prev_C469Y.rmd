@@ -1,0 +1,103 @@
+--
+title: "Prevalence of C469Y mutations in Agago"
+author: "Kisakye"
+date: "`r Sys.Date()`"
+output:
+html_document:
+df_print: paged
+toc: yes
+highlight: tango
+number_sections: no
+theme: sandstone
+code_folding: hide
+toc_depth: 1
+toc_float: yes
+---
+
+```{r cleanup, warning=FALSE, message=FALSE, error=FALSE}
+# CLEANUP
+# Clear all variables:
+rm(list=ls(all=TRUE))
+# Unload current packages:
+ if (!is.null(names(utils::sessionInfo()[["otherPkgs"]]))) pacman::p_unload("all")
+```
+
+
+```{r packages, results="hide", warning=FALSE, message=FALSE, error=FALSE}
+# LOAD PACKAGES:
+library(magrittr)
+library(dplyr)
+library(tidyr)
+```
+
+
+# Load data
+```{r}
+# dr_data1 <-read.table("/home/diana/Trainings/resmarkers_haplotype_summary.txt", sep = '\t')
+
+dr_data2 <-read.table("~/Trainings/Malaria-genomics/data/CopyOfresmarkers_summary.txt", header = TRUE, sep = "\t", stringsAsFactors = F, na.strings = " ")  # make sure to replace missing values with empty strings
+
+
+```
+
+# Select mutation of interest 
+```{r}
+# Look at the names of the dataset to identify mutation of interest
+names(dr_data2)
+
+# Select a subset of the dataframe for the mutation of interest
+dr_kelch <- dr_data2 %>%
+                dplyr::select("SampleName",  "PF3D7_1343700.k13.469")%>% 
+# sum(is.na(dr_kelch$PF3D7_1343700.k13.469)) # 15 samples have missing values, lets remove them.
+                na.omit()
+
+```
+
+```{r}
+# Split genotypes and the reads
+dr_kelch2 <-dr_kelch %>%
+ mutate(gt = stringr::str_split( PF3D7_1343700.k13.469, " ()", simplify = TRUE)[,1]) %>% 
+  mutate(reads = stringr::str_split( PF3D7_1343700.k13.469, " ()" , simplify = TRUE)[,2])
+ 
+```
+
+# Create a dataframe with WT, Mutant and Mixed genotypes
+```{r}
+dr_kelch3 <- dr_kelch2 %>%
+  mutate(Mixed =ifelse(gt == "Cys,Tyr", 1, 0)) %>%
+  mutate(Wildtype = ifelse(gt == "Cys", 1, 0)) %>%
+  mutate(Mutant =ifelse( gt == "Tyr", 1, 0 ))
+
+```
+
+# Calculate the prevalence of the different genotypes
+```{r}
+dr_kelch3%>%
+  summarise(prev_Wildtype = mean(Wildtype),
+            prev_Mutant = mean(Mutant),
+            prev_Mixed = mean(Mixed))
+
+
+```
+
+## Session info  
+<button class="button" onclick="myFunction('DIV_5')">Show/hide session info</button>
+  <div id="DIV_5" class="div_default_hide">
+  
+```{r print_date_and_time}
+Sys.time()
+```
+
+```{r print_session_info}
+# sessionInfo()
+devtools::session_info()
+```
+</div>
+  
+  <script>
+  var divsToHide = document.getElementsByClassName("div_default_hide");
+for(var i = 0; i < divsToHide.length; i++)
+{
+  divsToHide[i].style.display = 'none';
+}
+</script>
